@@ -1,6 +1,6 @@
 "use server";
 
-import { createAuthActions } from "@insforge/sdk/ssr";
+import { createAuthActions, createServerClient } from "@insforge/sdk/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -75,4 +75,16 @@ export async function exchangeOAuthCodeAction(code: string) {
   }
   
   return { success: true, data };
+}
+
+export async function checkAuthAction() {
+  const cookieStore = await cookies();
+  const client = createServerClient({
+    baseUrl: process.env.NEXT_PUBLIC_INSFORGE_URL!,
+    anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY!,
+    cookies: cookieStore,
+  });
+
+  const { data } = await client.auth.getCurrentUser();
+  return !!data?.user;
 }

@@ -2,12 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import posthog from "posthog-js";
-import { signOutAction } from "@/app/actions/auth";
+import { signOutAction, checkAuthAction } from "@/app/actions/auth";
 import { LogOut } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      const loggedIn = await checkAuthAction();
+      setIsAuthenticated(loggedIn);
+    }
+    checkAuth();
+  }, []);
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard" },
@@ -46,18 +56,28 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Sign Out */}
+        {/* Right CTA */}
         <div>
-          <button
-            onClick={async () => {
-              posthog.reset();
-              await signOutAction();
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-md text-sm font-medium text-text-secondary bg-surface hover:bg-surface-secondary hover:text-error hover:border-error/30 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
+          {isAuthenticated ? (
+            <button
+              onClick={async () => {
+                posthog.reset();
+                await signOutAction();
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-md text-sm font-medium text-text-secondary bg-surface hover:bg-surface-secondary hover:text-error hover:border-error/30 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              onClick={() => posthog.capture("nav_cta_clicked", { label: "login" })}
+              className="inline-flex items-center justify-center rounded-md bg-overlay px-4 py-2 text-sm font-medium text-white hover:bg-overlay-dark transition-colors"
+            >
+              Login
+            </Link>
+          )}
         </div>
       </div>
     </header>
