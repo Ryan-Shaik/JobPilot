@@ -25,7 +25,7 @@ export async function loginWithOAuthAction(provider: "google" | "github") {
     cookies: cookieStore,
   });
 
-  const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/callback`;
+  const redirectTo = `${process.env.SITE_URL ?? "http://localhost:3000"}/callback`;
 
   const { data, error } = await authActions.signInWithOAuth(provider, {
     redirectTo,
