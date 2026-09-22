@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import posthog from "posthog-js";
 import { loginWithOAuthAction } from "@/app/actions/auth"; // 1. Import the action
@@ -47,11 +48,15 @@ export default function LoginPage() {
 
       {/* Top bar */}
       <header className="relative z-10 w-full px-6 h-16 flex items-center">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="h-[36px] w-[36px] rounded-[10px] bg-gradient-to-br from-[#7C5CFC] to-[#4A2EC5]" />
-          <span className="text-[19px] font-bold text-text-darkest leading-[28px]">
-            JobPilot
-          </span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="JobPilot"
+            width={118}
+            height={40}
+            priority
+            className="h-8 md:h-9 w-auto object-contain"
+          />
         </Link>
       </header>
 
@@ -66,20 +71,15 @@ export default function LoginPage() {
           <div className="bg-surface rounded-2xl border border-border shadow-xl p-8">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#7C5CFC] to-[#4A2EC5] mb-4 shadow-lg">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
-                  />
-                </svg>
+              <div className="flex justify-center mb-4">
+                <Image
+                  src="/icon.png"
+                  alt="JobPilot"
+                  width={48}
+                  height={48}
+                  priority
+                  className="h-12 w-12 rounded-xl shadow-md object-contain"
+                />
               </div>
               <h1 className="text-2xl font-bold text-text-darkest tracking-tight">
                 Welcome to JobPilot
