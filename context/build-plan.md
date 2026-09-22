@@ -117,7 +117,7 @@ Wire profile form to InsForge DB.
 
 ### 07 AI Profile Extraction from Resume
 
-Extract from Resume button — GPT-4o reads uploaded PDF and auto-fills profile form fields.
+Extract from Resume button — Gemini reads uploaded PDF and auto-fills profile form fields.
 
 **UI:**
 
@@ -130,7 +130,7 @@ Extract from Resume button — GPT-4o reads uploaded PDF and auto-fills profile 
 
 - pdf-parse extracts raw text from uploaded PDF buffer
 - If extracted text is empty or too short — return error: "Could not extract text from this PDF. Please try a different file."
-- GPT-4o reads extracted text and returns structured JSON matching all profile field names
+- Gemini reads extracted text and returns structured JSON matching all profile field names
 - Form fields populated with extracted data
 - User saves manually after reviewing
 
@@ -187,7 +187,7 @@ Agent calls Adzuna API to find jobs matching user's search criteria, scores them
   - Detect country from location input — default to 'us'
 - For each job returned:
   - Extract title, company, location, salary, description snippet, redirect_url
-  - GPT-4o scores job against user profile:
+  - Gemini scores job against user profile:
     - matchScore — integer 0-100
     - matchReason — one paragraph explanation
     - matchedSkills — skills user has that job requires
@@ -231,7 +231,7 @@ Build the complete job details page UI. Job data from DB is already available fr
 - Back to Jobs link
 - Job header — company logo placeholder, job title, company name, match score badge with percentage, View Job Post button (links to redirect_url)
 - Info cards row — Salary Est., Location, Job Type, Date Found
-- AI Match Reasoning section — match reason paragraph from GPT-4o
+- AI Match Reasoning section — match reason paragraph from Gemini
 - Required Skills vs Your Profile — matched skills as green badges, missing skills as red/orange badges
 - Job Description section — description content from Adzuna
 - Company Research card — empty state with Research Company button. After research: structured dossier with company overview, tech stack, culture, why this role, interview prep
@@ -241,7 +241,7 @@ Build the complete job details page UI. Job data from DB is already available fr
 
 # Feature 13 — Company Research Agent (Updated)
 
-Agent researches the company using their public website and builds a structured dossier using a single Browserbase session. Three data sources fused together: company website content, job description from DB, user profile from DB.
+Agent researches the company using their public website and builds a structured dossier using Browserless web scraping. Three data sources fused together: company website content, job description from DB, user profile from DB.
 
 **Logic:**
 
@@ -249,72 +249,18 @@ Agent researches the company using their public website and builds a structured 
 - Load job data from DB — extract company_name, job description, matched_skills, missing_skills
 - Load user profile from DB — skills, experience, work history
 - Derive company homepage URL by following the Adzuna redirect with server-side fetch() — no browser needed for this step:
-  - fetch(redirect_url, { redirect: "follow" }) follows HTTP redirects natively before the browser opens
+  - fetch(redirect_url, { redirect: "follow" }) follows HTTP redirects natively
   - Use response.url as the real employer job page URL
   - Strip subdomain from response.url hostname (e.g. jobs.stripe.com → stripe.com)
   - Construct homepage URL as https://{rootDomain}
   - If response.url still contains "adzuna.com" or fetch throws — fall back to https://www.{company}.com (company name from DB)
-  - If Stagehand gets no meaningful content (oneLiner and productSummary empty) — skip browser research entirely, proceed to GPT-4o synthesis with job description and profile only
-- Open single Browserbase session with Stagehand
-  **Stagehand homepage extraction:**
+- Fetch rendered company homepage using Browserless (`https://chrome.browserless.io/content?token=${token}`)
+- Extract main text content, company overview, and discover sub-page URLs (about, engineering, culture, blog)
+- Fetch up to 2-3 discovered sub-pages using Browserless
+- Clean extracted text and pass to AI model along with job description & user profile
+- If web scraping yields empty or fails — skip browser content and proceed to AI synthesis with job description and profile only
 
-```typescript
-const homepage = await stagehand.extract({
-  instruction:
-    "This is a company's homepage. Capture what the company actually does, who it's for, and any concrete signals (funding, customers, scale, mission, recent launches). Then find the internal links most worth visiting to research them as an employer.",
-  schema: z.object({
-    oneLiner: z.string().describe("What the company does in one sentence"),
-    productSummary: z
-      .string()
-      .describe("What they build/sell and who it's for"),
-    signals: z
-      .array(z.string())
-      .describe("Funding, notable customers, scale, mission, recent news"),
-    pageLinks: z
-      .array(
-        z.object({
-          url: z.string(),
-          kind: z.enum([
-            "about",
-            "careers",
-            "blog",
-            "engineering",
-            "product",
-            "team",
-            "other",
-          ]),
-        }),
-      )
-      .describe("Internal links worth visiting"),
-  }),
-});
-```
-
-If oneLiner and productSummary are empty — bail to synthesis with job description and profile only.
-
-**Stagehand sub-page extraction (max 3 pages — prefer about/blog/engineering/product over careers):**
-
-```typescript
-const page = await stagehand.extract({
-  instruction:
-    "Extract substance that helps a candidate understand this company before applying: what they do, their values and how they work, the specific technologies and tools they use, notable projects or customers, and how the team operates. Ignore nav, footers, cookie banners, and generic marketing copy.",
-  schema: z.object({
-    keyPoints: z.array(z.string()),
-    technologies: z
-      .array(z.string())
-      .describe("Specific languages, frameworks, tools, platforms"),
-    valuesOrCulture: z
-      .array(z.string())
-      .describe("Stated values, working style, team norms"),
-    notable: z
-      .array(z.string())
-      .describe("Customers, funding, scale, projects, awards"),
-  }),
-});
-```
-
-- Close Browserbase session after homepage + max 3 sub-pages
-  **GPT-4o synthesis (runs after browser closes):**
+**AI Synthesis:**
 
 System prompt:
 
@@ -366,7 +312,7 @@ Temperature: 0.4
 ```
 
 - Save complete dossier to jobs.company_research jsonb column
-- Always return a dossier — never fail silently. If browser research failed, GPT-4o synthesizes from job description and profile alone.
+- Always return a dossier — never fail silently. If browser research failed, Gemini synthesizes from job description and profile alone.
   **PostHog event:** `company_researched` — { userId, jobId, company }
 
 ---

@@ -1,41 +1,55 @@
-# Memory — AI Extraction Warning Fix & Header Dynamic Sign Out
+# Memory — Features 14, 15 & 16: Dashboard UI, Real Stats & Recent Activity
 
-Last updated: 2026-07-20T15:06:00+06:00
+Last updated: 2026-09-05T19:40:00+06:00
 
 ## What was built
 
-- **AI Extraction Warning Fix**:
-  - Sanitized the raw AI output returned by `google/gemini-3.1-flash-lite` in `components/profile/ProfileForm.tsx`.
-  - Coerced null fields (like `startMonth`, `startYear`, `endMonth`, `endYear`) to `""` before updating the `workExperiences` state, eliminating the React warning `value prop on select should not be null`.
+- **Feature 14 — Dashboard Page (Full UI) & Logo Update**:
+  - Updated [components/layout/Navbar.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/components/layout/Navbar.tsx) to render `public/logo.png` (matching `context/designs/logo.png`) via Next.js `Image` and realigned navigation items (`Dashboard`, `Find Jobs`, `Profile`) to the right with active tab purple underline.
+  - Created [components/dashboard/StatsBar.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/components/dashboard/StatsBar.tsx) with 4 stat cards (`Total Jobs Found`, `Avg. Match Rate`, `Companies Researched`, `Jobs This Week`) and rounded trend badges.
+  - Created [components/dashboard/RecentActivity.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/components/dashboard/RecentActivity.tsx) with vertical connector line and color-coded status dots (`accent`, `info`, `success`).
+  - Created [components/dashboard/CompanyResearchChart.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/components/dashboard/CompanyResearchChart.tsx) (7-day blue bar chart, `#61A8FF`, rounded top corners, dashed gridlines).
+  - Created [components/dashboard/JobsOverTimeChart.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/components/dashboard/JobsOverTimeChart.tsx) (7-day smooth cubic bezier spline curve in `#7C5CFC` with gradient fill).
+  - Created [components/dashboard/MatchScoreDistributionChart.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/components/dashboard/MatchScoreDistributionChart.tsx) (5-bucket vertical bar chart in emerald green `#10B981`).
+  - Created [components/dashboard/DashboardClient.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/components/dashboard/DashboardClient.tsx) orchestrating the 3-tier layout with conditional profile attention banner support.
+  - Created [app/dashboard/page.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/app/dashboard/page.tsx) as an authenticated dynamic Server Component.
 
-- **Navbar & Header Dynamic Sign Out**:
-  - Replaced the "Start for free" login link in `components/layout/Navbar.tsx` with a dynamic CTA.
-  - Added a `checkAuthAction` server action in `app/actions/auth.ts` to bypass client-side domain isolation issues for cookies.
-  - Shows **Sign Out** button when authenticated; shows **Login** button when unauthenticated.
-  - Removed the duplicate **Sign Out** button from the profile page header in `components/profile/ProfileClient.tsx`.
+- **Feature 15 — Stats Bar (Real Data)**:
+  - Wired [app/dashboard/page.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/app/dashboard/page.tsx) to query InsForge `jobs` table filtered by `user_id = current_user`.
+  - Computes `totalJobs`, `avgMatchRate` (arithmetic mean of valid scores), `companiesResearched` (non-null `company_research`), and `jobsThisWeek` (`found_at >= now - 7 days`).
+  - Computes rolling week-over-week trends with positive (`bg-[#ECFDF5] text-[#009966]`) and negative (`bg-[#FEF2F2] text-error`) styling.
+
+- **Feature 16 — Recent Activity (Real Data)**:
+  - Wired [components/dashboard/RecentActivity.tsx](file:///c:/Users/Shaik/Desktop/jobpilot/components/dashboard/RecentActivity.tsx) to live InsForge `agent_runs` and `jobs` (with populated `company_research`) for the user.
+  - Merged and sorted chronologically descending with `formatRelativeTime()` ("10 mins ago", "1 hour ago", "Yesterday").
+  - Sliced top 5 entries with semantic dot indicators and an empty state fallback with Clock icon for fresh accounts.
+
+- **Documentation & Tracking**:
+  - Updated [context/ui-registry.md](file:///c:/Users/Shaik/Desktop/jobpilot/context/ui-registry.md) with full component tokens and patterns.
+  - Updated [context/progress-tracker.md](file:///c:/Users/Shaik/Desktop/jobpilot/context/progress-tracker.md) checking off Features 14, 15, and 16.
 
 ## Decisions made
 
-- **Null Coercion at state ingestion**: AI extraction returns raw JSON that can contain nulls for missing values; we always sanitize it to safe empty-string values before binding to controlled select inputs.
-- **Server Action for auth checks client-side**: Because cookie storage is hosted on the Next.js app domain, CSR-based direct API calls to the InsForge backend subdomain lack credentials. Checking auth via a Server Action resolves this.
+- **Native SVG Chart Components**: Built pixel-perfect SVG charts matching `context/designs/dashboard.png` with smooth cubic bezier spline math for the area chart and responsive SVG viewports, avoiding third-party charting peer-dependency conflicts with React 19.
+- **Single Server Data Fetch**: Reused the `dbJobs` query in `app/dashboard/page.tsx` for stat card metrics and company research activity to minimize database roundtrips.
+- **Chronological Activity Merging**: Interleaved job search runs ("Found X jobs for [jobTitle]") and research dossiers ("Researched [company]") by execution timestamp for a unified activity feed.
+- **Preserved Feature 13 Dossier Enhancements**: Single-column layout with structured `flex` icon-row items across all 9 dossier sections remains intact and active.
 
 ## Problems solved
 
-- **React Select Null Warnings**: Fixed console noise/runtime warnings on select components during AI resume extraction.
-- **Header Auth State Mismatch**: Fixed Navbar showing "Login" on authenticated pages (and "Sign Out" on unauthenticated homepages) by checking user session status server-side via Server Actions.
+- Corrected logo placeholder in `Navbar.tsx` by referencing `public/logo.png` with Next.js `Image`, matching design specifications.
+- Added empty state handling to `RecentActivity` so users with no previous searches or dossiers see a clean, informative state rather than broken layout.
 
 ## Current state
 
-- All Phase 1 & Phase 2 features (up to Feature 07) are complete.
-- Project builds and runs without console warnings on resume extraction.
-- Sign Out and Login button toggle dynamically based on actual auth state.
+- Phases 1 through 4 and Phase 5 Features 14, 15, and 16 are fully completed and verified.
+- TypeScript compilation and Next.js build pass with zero errors.
 
 ## Next session starts with
 
-- **Feature 08 — Resume PDF Generation from Profile**:
-  - Implement `/api/resume/generate` endpoint.
-  - Read profile data from DB, rewrite details/bullets using LLM (`gemini-3.1-flash-lite`), render single-page PDF with `@react-pdf/renderer` buffer, upload it to the InsForge `resumes` bucket, and update the profile table.
+- **Phase 5 — Dashboard**:
+  - **Feature 17 — Analytics Charts (PostHog Data)**: Connect the 3 dashboard charts (`Jobs Found Over Time`, `Match Score Distribution`, and `Company Research Activity`) to live PostHog event data (`job_found` and `company_researched`).
 
 ## Open questions
 
-- Confirm any specific styling rules or layout preferences for the generated resume PDF layout.
+- None.

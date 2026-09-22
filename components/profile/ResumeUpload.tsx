@@ -10,9 +10,20 @@ type Props = {
   existingResumeUrl?: string;
   onExtract?: () => void;
   isExtracting?: boolean;
+  onGenerate?: () => void;
+  isGenerating?: boolean;
 };
 
-export function ResumeUpload({ file, setFile, existingResumeName, existingResumeUrl, onExtract, isExtracting }: Props) {
+export function ResumeUpload({
+  file,
+  setFile,
+  existingResumeName,
+  existingResumeUrl,
+  onExtract,
+  isExtracting,
+  onGenerate,
+  isGenerating,
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
@@ -179,10 +190,21 @@ export function ResumeUpload({ file, setFile, existingResumeName, existingResume
           </p>
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-surface text-text-primary hover:bg-surface-secondary transition-colors text-sm font-medium"
+            onClick={onGenerate}
+            disabled={isGenerating}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-surface text-text-primary hover:bg-surface-secondary disabled:opacity-60 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
-            <FileText className="w-4 h-4" />
-            Generate Resume from Profile
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                Generating…
+              </>
+            ) : (
+              <>
+                <FileText className="w-4 h-4 text-text-secondary" />
+                Generate Resume from Profile
+              </>
+            )}
           </button>
         </div>
       </div>

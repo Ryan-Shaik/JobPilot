@@ -261,7 +261,7 @@ export function ProfileForm({ profile, onSave, isSaving, extractedData }: Props)
         </p>
       </div>
 
-      <form key={formKey} onSubmit={handleSubmit} className="flex flex-col gap-8">
+      <form key={formKey} id="profile-form" onSubmit={handleSubmit} className="flex flex-col gap-8">
         {/* Hidden inputs for serialized states */}
         <input type="hidden" name="skills" value={JSON.stringify(skills)} />
         <input type="hidden" name="industries" value={JSON.stringify(industries)} />
